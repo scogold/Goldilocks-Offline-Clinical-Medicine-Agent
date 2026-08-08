@@ -4,10 +4,12 @@ from pathlib import Path
 import numpy as np
 import ollama
 from pypdf import PdfReader
+import config as cfg
+
 
 DOCUMENT_DIR = Path("documents/approved")
 DATA_DIR = Path("data")
-EMBEDDING_MODEL = "embeddinggemma"
+EMBEDDING_MODEL = cfg.EMBEDDING_MODEL_NAME
 
 
 def normalize(vector):
