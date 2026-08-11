@@ -1,7 +1,18 @@
+"""Central configuration for the local Goldilocks application."""
 
+from pathlib import Path
 
-#Basic Settings
-CHAT_MODEL_NAME = ""
+BASE_DIR = Path(__file__).resolve().parent
+DOCUMENT_DIR = BASE_DIR / "documents" / "approved"
+MANIFEST_PATH = BASE_DIR / "documents" / "manifest.csv"
+DATA_DIR = BASE_DIR / "data"
+
+CHAT_MODEL_NAME = "gemma4:12b"
 EMBEDDING_MODEL_NAME = "embeddinggemma"
 
-#Advanced Settings (This will work just fine with the default settings :) )
+CHUNK_SIZE = 1_400
+CHUNK_OVERLAP = 200
+EMBED_BATCH_SIZE = 32
+DEFAULT_TOP_K = 5
+MIN_SIMILARITY = 0.15
+MAX_CONTEXT_CHARS = 10_000
