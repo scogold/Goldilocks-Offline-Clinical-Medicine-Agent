@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from urllib.parse import quote
 
 import streamlit as st
 
@@ -104,6 +105,7 @@ TEXT = {
         "view_sources": "Ver {count} fuentes recuperadas",
         "page": "p.",
         "similarity": "similitud",
+        "open_document": "Abrir documento completo (p. {page})",
     },
     "en": {
         "library": "Local clinical library",
@@ -132,6 +134,7 @@ TEXT = {
         "view_sources": "View {count} retrieved sources",
         "page": "p.",
         "similarity": "similarity",
+        "open_document": "Open full document (p. {page})",
     },
 }
 
@@ -163,7 +166,12 @@ def passage_to_dict(passage) -> dict:
     }
 
 
-def render_sources(sources: list[dict], text: dict[str, str]) -> None:
+def document_url(filename: str, page: int) -> str:
+    """Link to the static copy of an approved PDF, opened at the cited page."""
+    return f"/{cfg.STATIC_DOCUMENT_URL_PREFIX}/{quote(filename)}#page={page}"
+
+
+def render_sources(sources: list[dict], text: dict[str, str], message_key: str) -> None:
     if not sources:
         return
     with st.expander(text["view_sources"].format(count=len(sources)), expanded=False):
@@ -175,6 +183,11 @@ def render_sources(sources: list[dict], text: dict[str, str]) -> None:
             )
             st.caption(source["filename"])
             st.write(source["text"])
+            st.link_button(
+                text["open_document"].format(page=source["page"]),
+                document_url(source["filename"], source["page"]),
+                key=f"open-document-{message_key}-{source_index}",
+            )
             if source_index < len(sources) - 1:
                 st.divider()
 
@@ -248,11 +261,11 @@ if not st.session_state.messages:
     with st.chat_message("assistant", avatar="🐻"):
         st.markdown(t["hello"])
 
-for message in st.session_state.messages:
+for message_index, message in enumerate(st.session_state.messages):
     avatar = "🐻" if message["role"] == "assistant" else "🩺"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
-        render_sources(message.get("sources", []), t)
+        render_sources(message.get("sources", []), t, f"history-{message_index}")
 
 question = st.chat_input(t["input"])
 if question:
@@ -266,7 +279,7 @@ if question:
                 result = rag.answer(question, top_k=top_k, answer_language=language)
             sources = [passage_to_dict(passage) for passage in result.passages]
             st.markdown(result.text)
-            render_sources(sources, t)
+            render_sources(sources, t, f"live-{len(st.session_state.messages)}")
             st.session_state.messages.append(
                 {"role": "assistant", "content": result.text, "sources": sources}
             )

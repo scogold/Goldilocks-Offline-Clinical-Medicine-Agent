@@ -7,6 +7,7 @@ import csv
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 from typing import Iterable
 
@@ -141,6 +142,21 @@ def extract_records(documents: Iterable[dict[str, str]], document_dir: Path) -> 
     return records
 
 
+def sync_static_documents(
+    documents: Iterable[dict[str, str]], document_dir: Path, static_document_dir: Path
+) -> None:
+    """Mirror only the currently approved PDFs into the static folder Streamlit serves."""
+    static_document_dir.mkdir(parents=True, exist_ok=True)
+    approved_filenames = {document["filename"] for document in documents}
+
+    for stale_path in static_document_dir.glob("*.pdf"):
+        if stale_path.name not in approved_filenames:
+            stale_path.unlink()
+
+    for filename in approved_filenames:
+        shutil.copy2(document_dir / filename, static_document_dir / filename)
+
+
 def embed_records(records: list[dict], model: str, batch_size: int) -> np.ndarray:
     batches: list[np.ndarray] = []
     for start in range(0, len(records), batch_size):
@@ -176,10 +192,16 @@ def atomic_write_npy(path: Path, value: np.ndarray) -> None:
     os.replace(temp_path, path)
 
 
-def build_index(manifest_path: Path, document_dir: Path, data_dir: Path) -> tuple[int, int]:
+def build_index(
+    manifest_path: Path,
+    document_dir: Path,
+    data_dir: Path,
+    static_document_dir: Path = cfg.STATIC_DOCUMENT_DIR,
+) -> tuple[int, int]:
     documents = load_approved_documents(manifest_path, document_dir)
     records = extract_records(documents, document_dir)
     embeddings = embed_records(records, cfg.EMBEDDING_MODEL_NAME, cfg.EMBED_BATCH_SIZE)
+    sync_static_documents(documents, document_dir, static_document_dir)
 
     data_dir.mkdir(parents=True, exist_ok=True)
     atomic_write_npy(data_dir / "embeddings.npy", embeddings)
@@ -203,13 +225,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", type=Path, default=cfg.MANIFEST_PATH)
     parser.add_argument("--documents", type=Path, default=cfg.DOCUMENT_DIR)
     parser.add_argument("--data", type=Path, default=cfg.DATA_DIR)
+    parser.add_argument("--static-documents", type=Path, default=cfg.STATIC_DOCUMENT_DIR)
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
-        document_count, passage_count = build_index(args.manifest, args.documents, args.data)
+        document_count, passage_count = build_index(
+            args.manifest, args.documents, args.data, args.static_documents
+        )
     except IngestionError as exc:
         print(f"Ingestion failed: {exc}")
         return 1

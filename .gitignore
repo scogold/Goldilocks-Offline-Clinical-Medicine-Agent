@@ -9,6 +9,12 @@ data/
 data/*
 !data/.gitkeep
 
+# Generated static copies of approved PDFs (served by Streamlit)
+static/documents/
+!static/documents/
+static/documents/*
+!static/documents/.gitkeep
+
 # Python
 __pycache__/
 *.py[cod]

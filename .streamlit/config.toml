@@ -4,6 +4,7 @@ gatherUsageStats = false
 [server]
 address = "127.0.0.1"
 headless = true
+enableStaticServing = true
 
 [theme]
 primaryColor = "#1F5D50"
