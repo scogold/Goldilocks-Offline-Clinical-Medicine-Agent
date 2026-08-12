@@ -10,6 +10,8 @@ When a user directly requests one of those patient-care decisions, Goldilocks do
 
 ```text
 .
+├── Start_Goldilocks.bat      # Windows one-click launcher (double-click to run)
+├── launch.py                 # Launcher logic: setup, checks, ingest, start app
 ├── app.py                    # Local Streamlit web interface
 ├── cli.py                    # Interactive and single-question terminal interface
 ├── config.py                 # Models, paths, and retrieval settings
@@ -26,6 +28,10 @@ When a user directly requests one of those patient-care decisions, Goldilocks do
 └── evaluation/
     └── test_cases.csv
 ```
+
+## Quick start (Windows, no command line)
+
+Double-click **`Start_Goldilocks.bat`**. It sets up an isolated Python environment, installs dependencies, checks that Ollama is running and pulls the required models if missing, rebuilds the local index only when the approved documents changed, and opens the app in your browser. Python 3.10+ and Ollama still need to be installed first (see Setup below); the first run also needs internet access to download dependencies and models. Close the console window it opens to stop the app.
 
 ## Setup
 
